@@ -479,44 +479,64 @@ function carregarSlots(data) {
 document.getElementById('formEstudio').addEventListener('submit', function(ev){
   ev.preventDefault();
   var btn = document.getElementById('btnEstudio');
-  var fb = document.getElementById('feedbackEstudio');
-  var eq = document.querySelectorAll('input[name=equipamentos]:checked');
-  var outros = document.querySelector('input[name=equipamentosOutros]').value.trim();
+  var fb  = document.getElementById('feedbackEstudio');
   if (!alunoLogado) { alert('Digite um RGM válido para continuar.'); return; }
   if (!estudioSelecionado) { alert('Selecione um estúdio antes de continuar.'); return; }
-  var emailEst = fd.get('email') || '';
+  if (!diaSelecionadoEstudio) { alert('Selecione uma data.'); return; }
+  if (!horarioSelecionado) { alert('Selecione um horário.'); return; }
+
+  var fd = new FormData(ev.target);
+  var emailEst = (fd.get('email') || '').trim();
   if (!emailEst.endsWith('@alunos.unigrancapital.com.br')) {
     alert('Apenas e-mails acadêmicos são aceitos.\nUse seu e-mail @alunos.unigrancapital.com.br.');
     return;
   }
-  if (eq.length === 0 && !outros) { alert('Selecione ao menos um equipamento.'); return; }
-  if (!diaSelecionadoEstudio) { alert('Selecione uma data.'); return; }
-  if (!horarioSelecionado) { alert('Selecione um horário.'); return; }
+
   btn.disabled = true; btn.textContent = 'Enviando...'; fb.style.display = 'none';
-  var fd = new FormData(ev.target);
+
+  var nascimento = fd.get('nascimento') || '';
   var dados = {
-    nome:fd.get('nome'), rgm:fd.get('rgm'), semestre:fd.get('semestre'),
-    whatsapp:fd.get('whatsapp'), email:fd.get('email'),
-    finalidade:fd.get('finalidade'), descricao:fd.get('descricao'),
-    equipamentos:fd.get('equipamentos') || 'Nenhum',
-    patrimonios:fd.get('patrimonios') || '',
-    participantes:fd.get('participantes'),
-    data:fd.get('data'), horario:fd.get('horario'),
-    tipoEstudio:fd.get('tipoEstudio') || 'Estúdio de Foto'
+    status: 'Pendente',
+    enviadoEm: new Date().toISOString(),
+    nome: alunoLogado.nome || fd.get('nome') || '',
+    rgm: fd.get('rgm') || '',
+    semestre: alunoLogado.semestre || fd.get('semestre') || '',
+    whatsapp: fd.get('whatsapp') || '',
+    nascimento: nascimento,
+    email: emailEst,
+    finalidade: fd.get('finalidade') || '',
+    descricao: fd.get('descricao') || '',
+    equipamentos: document.getElementById('equipEstudioHidden') ? document.getElementById('equipEstudioHidden').value || 'Nenhum' : 'Nenhum',
+    patrimonios: document.getElementById('patrimoniosEstudioHidden') ? document.getElementById('patrimoniosEstudioHidden').value || '' : '',
+    participantes: fd.get('participantes') || '',
+    data: diaSelecionadoEstudio || '',
+    horario: horarioSelecionado || '',
+    tipoEstudio: estudioSelecionado || 'Estúdio de Foto'
   };
-  fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(dados)})
-    .then(function(r){ return r.json(); })
-    .then(function(res){
-      if (res.ok) {
-        document.getElementById('formEstudio').style.display = 'none';
-        fb.className = 'feedback'; fb.style.display = 'block';
-        fb.innerHTML = '<strong>Uhul! 🎉</strong>Sua solicitação foi enviada. Agora a Coordenação fará a análise e, em breve, você vai receber um e-mail com a confirmação.';
-      } else { throw new Error(res.erro || 'Erro desconhecido'); }
+
+  // Gravar no Firestore
+  var fbApp3;
+  try { fbApp3 = firebase.app('pp-sol'); } catch(e) {
+    fbApp3 = firebase.initializeApp({
+      apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
+      authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
+      projectId: "ppuncapital-solicitacoes"
+    }, 'pp-sol');
+  }
+  firebase.firestore(fbApp3).collection('solicitacoes').add(dados)
+    .then(function(docRef) {
+      dados.firestoreId = docRef.id;
+      // Também notificar o Apps Script (para e-mail)
+      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'estudio'}, dados))}).catch(function(){});
+      document.getElementById('formEstudio').style.display = 'none';
+      fb.className = 'feedback'; fb.style.display = 'block';
+      fb.innerHTML = '<strong>Uhul! 🎉</strong> Solicitação enviada! A Coordenação vai analisar e você receberá um e-mail com a confirmação.';
+      btn.disabled = false; btn.textContent = 'Enviar solicitação';
     })
-    .catch(function(err){
+    .catch(function(err) {
       btn.disabled = false; btn.textContent = 'Enviar solicitação';
       fb.className = 'feedback erro'; fb.style.display = 'block';
-      fb.innerHTML = 'Erro ao enviar: ' + err.message + '. Tente novamente.';
+      fb.innerHTML = 'Erro ao enviar: ' + err.message;
     });
 });
 
@@ -926,6 +946,72 @@ function toggleEquipEstudioModelo(el, cat, modelo, disponiveis) {
 }
 
 var equipEstudioSelecionados = [];
+
+// ====== SUBMIT EQUIPAMENTOS ======
+document.getElementById('formEquip').addEventListener('submit', function(ev) {
+  ev.preventDefault();
+  var btn = document.getElementById('btnEquip');
+  var fb  = document.getElementById('feedbackEquip');
+
+  if (!alunoLogado) { alert('Digite um RGM válido para continuar.'); return; }
+
+  var dataRet = document.getElementById('dataRetirada') ? document.getElementById('dataRetirada').value : '';
+  if (!dataRet) { alert('Selecione a data de retirada.'); return; }
+  if (equipSelecionados.length === 0) { alert('Selecione ao menos um equipamento.'); return; }
+
+  var fd = new FormData(ev.target);
+  var emailVal = (fd.get('emailE') || alunoLogado.rgm + '@alunos.unigrancapital.com.br').trim();
+
+  btn.disabled = true; btn.textContent = 'Enviando...'; fb.style.display = 'none';
+
+  // Montar lista de equipamentos e patrimônios
+  var nomesList = equipSelecionados.map(function(e) {
+    return e.cat === 'Câmera de Foto' || e.cat === 'Câmera' ? e.descricao + ' + Kit' : (e.descricao || e.cat);
+  }).join(', ');
+  var patList = equipSelecionados.map(function(e){ return e.patrimonio || ''; }).filter(Boolean).join(', ');
+
+  var devInfo = document.getElementById('infoDevolucao') ? document.getElementById('infoDevolucao').textContent : '';
+
+  var dados = {
+    status: 'Pendente',
+    enviadoEm: new Date().toISOString(),
+    nome: alunoLogado.nome || '',
+    rgm: alunoLogado.rgm || fd.get('rgmE') || '',
+    semestre: alunoLogado.semestre || fd.get('semestreE') || '',
+    whatsapp: fd.get('whatsappE') || '',
+    nascimento: fd.get('nascimentoE') || '',
+    email: emailVal,
+    dataRetirada: dataRet,
+    dataDevolucao: devInfo,
+    equipamentos: nomesList || 'Nenhum',
+    patrimonios: patList || ''
+  };
+
+  // Gravar no Firestore
+  var fbAppEmp;
+  try { fbAppEmp = firebase.app('pp-emp'); } catch(e) {
+    fbAppEmp = firebase.initializeApp({
+      apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
+      authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
+      projectId: "ppuncapital-solicitacoes"
+    }, 'pp-emp');
+  }
+
+  firebase.firestore(fbAppEmp).collection('emprestimos').add(dados)
+    .then(function(docRef) {
+      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'equipamento'}, dados))}).catch(function(){});
+      ev.target.style.display = 'none';
+      fb.className = 'feedback'; fb.style.display = 'block';
+      fb.innerHTML = '<strong>Uhul! 🎉</strong> Solicitação enviada! A Coordenação vai analisar e você receberá um e-mail com a confirmação.';
+      btn.disabled = false; btn.textContent = 'Enviar solicitação';
+      equipSelecionados = [];
+    })
+    .catch(function(err) {
+      btn.disabled = false; btn.textContent = 'Enviar solicitação';
+      fb.className = 'feedback erro'; fb.style.display = 'block';
+      fb.innerHTML = 'Erro ao enviar: ' + err.message;
+    });
+});
 
 </script>
 <div class="adm-link"><a href="adm.html">Acesso restrito</a></div>

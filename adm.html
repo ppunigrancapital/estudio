@@ -31,7 +31,7 @@ header span{font-size:12px;opacity:.7}
 .tab{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:500;color:#6b6b6b;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
 .tab.on{color:var(--roxo);border-bottom-color:var(--roxo);font-weight:600}
 .painel{padding:24px;max-width:1100px;margin:0 auto}
-.st{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--roxo2);margin:24px 0 10px;clear:both}
+.st{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--roxo2);margin:24px 0 10px}
 .st:first-child{margin-top:0}
 .card{background:#fff;border:1px solid var(--borda);border-radius:var(--r);padding:20px;margin-bottom:12px}
 .ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -44,7 +44,7 @@ header span{font-size:12px;opacity:.7}
 .btn{padding:8px 18px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:Inter,sans-serif;text-decoration:none;display:inline-block}
 .bok{background:var(--verde);color:#fff}.bno{background:#eee;color:#333}.broxo{background:var(--roxo);color:#fff}.bverm{background:#c0392b;color:#fff}
 .vazio{text-align:center;color:#6b6b6b;padding:40px;font-size:13px}
-.pgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:24px}.cat-section{background:#fff;border:1px solid var(--borda);border-radius:var(--r);padding:16px}.cat-section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--roxo2);margin-bottom:12px}.cat-cards{display:flex;flex-direction:column;gap:8px}.ecard{background:var(--fundo);border:1px solid var(--borda);border-radius:6px;padding:10px;text-align:center;cursor:pointer;transition:all .15s;position:relative}.ecard:hover{border-color:var(--roxo);box-shadow:0 2px 8px rgba(106,30,154,.12)}.ecard-icon{font-size:22px;margin-bottom:4px;display:block}.ecard-nome{font-size:12px;font-weight:600;color:#1a1a1a;line-height:1.3}.ecard-info{font-size:10px;color:#6b6b6b;margin-top:2px}.ecard-badge{position:absolute;top:5px;right:5px;background:var(--roxo);color:#fff;border-radius:20px;padding:1px 6px;font-size:10px;font-weight:700}.ecard-restrito{position:absolute;top:5px;left:5px;font-size:10px}
 .ecard{background:#fff;border:1px solid var(--borda);border-radius:var(--r);padding:16px 10px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
 .ecard:hover{border-color:var(--roxo);box-shadow:0 2px 12px rgba(106,30,154,.15);transform:translateY(-2px)}
 .ecard-icon{font-size:30px;margin-bottom:8px;display:block}
@@ -93,7 +93,7 @@ header span{font-size:12px;opacity:.7}
 .campo{margin-bottom:14px}.campo label{display:block;font-size:12px;font-weight:500;color:var(--roxo2);margin-bottom:5px}
 .campo input,.campo select{width:100%;border:1.5px solid var(--borda);border-radius:var(--r);padding:9px 11px;font-size:13px;outline:none;font-family:Inter,sans-serif}
 .campo input:focus,.campo select:focus{border-color:var(--roxo)}
-@media(max-width:600px){.cgrid{grid-template-columns:1fr 1fr}.painel{padding:16px}.pgrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.cgrid{grid-template-columns:1fr 1fr}.painel{padding:16px}.cat-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
 </style>
 </head>
 <body>
@@ -303,14 +303,22 @@ function renderEstudio(docs) {
   renderSec('estudio','Pendentes',pend,function(s){ return mkCard(
     (s.nome||'')+' — '+(s.semestre||'')+' sem.','RGM '+(s.rgm||'')+' · '+(s.email||'')+' · '+(s.whatsapp||''),s.status,
     [['Tipo',s.tipoEstudio],['Data',s.data],['Horário',s.horario],['Finalidade',s.finalidade],['Descrição',s.descricao],['Equipamentos',s.equipamentos],['Participantes',s.participantes]],
-    mkBtns([{label:'✅ Aprovar',cls:'bok',fn:function(){aprovarEst(s);}},{label:'❌ Recusar',cls:'bno',fn:function(){recusarEst(s);}}]));
+    mkBtns([
+      {label:'✅ Aprovar',cls:'bok',fn:function(){aprovarEst(s);}},
+      {label:'❌ Recusar',cls:'bno',fn:function(){recusarEst(s);}},
+      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','pendente',s.data,s.horario);}}
+    ]));
   });
   renderSec('estudio','Agendados',apr,function(s){ return mkCard(
     (s.nome||'')+' — '+(s.semestre||'')+' sem.','RGM '+(s.rgm||''),s.status,
     [['Tipo',s.tipoEstudio],['Data',s.data],['Horário',s.horario]],
-    mkBtns([{label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termoEstudio&id='+(s.firestoreId||s.id)}]));
+    mkBtns([
+      {label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termoEstudio&id='+(s.firestoreId||s.id)},
+      {label:'📱 WhatsApp',cls:'bok',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','Aprovado',s.data,s.horario);}}
+    ]));
   });
-  renderSec('estudio','Histórico',rec,function(s){ return mkCard(s.nome||'','RGM '+(s.rgm||''),s.status,[['Data',s.data],['Horário',s.horario]],null); });
+  renderSec('estudio','Histórico',rec,function(s){ return mkCard(s.nome||'','RGM '+(s.rgm||''),s.status,[['Data',s.data],['Horário',s.horario]],
+    s.status==='Recusado'?mkBtns([{label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','Recusado',s.data,s.horario);}}]):null); });
 }
 function aprovarEst(s) {
   if(!confirm('Aprovar reserva de '+s.nome+'?')) return;
@@ -334,13 +342,21 @@ function renderEquipamentos(docs) {
   renderSec('equipamentos','Pendentes',pend,function(s){ return mkCard(
     s.nome||'','RGM '+(s.rgm||'')+' · '+(s.email||''),s.status,
     [['Retirada',s.dataRetirada],['Devolução',s.dataDevolucao],['Equipamentos',s.equipamentos],['Patrimônios',s.patrimonios]],
-    mkBtns([{label:'✅ Aprovar e enviar termo',cls:'bok',fn:function(){aprovarEq(s);}},{label:'❌ Recusar',cls:'bno',fn:function(){recusarEq(s);}}]));
+    mkBtns([
+      {label:'✅ Aprovar e enviar termo',cls:'bok',fn:function(){aprovarEq(s);}},
+      {label:'❌ Recusar',cls:'bno',fn:function(){recusarEq(s);}},
+      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','pendente',s.dataRetirada,'');}}
+    ]));
   });
   renderSec('equipamentos','Aprovados',apr,function(s){ return mkCard(
     s.nome||'','RGM '+(s.rgm||''),s.status,[['Retirada',s.dataRetirada],['Devolução',s.dataDevolucao],['Equipamentos',s.equipamentos]],
-    mkBtns([{label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termo&id='+(s.firestoreId||s.id)}]));
+    mkBtns([
+      {label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termo&id='+(s.firestoreId||s.id)},
+      {label:'📱 WhatsApp',cls:'bok',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','Aprovado',s.dataRetirada,'');}}
+    ]));
   });
-  renderSec('equipamentos','Histórico',rec,function(s){ return mkCard(s.nome||'','RGM '+(s.rgm||''),s.status,[['Retirada',s.dataRetirada]],null); });
+  renderSec('equipamentos','Histórico',rec,function(s){ return mkCard(s.nome||'','RGM '+(s.rgm||''),s.status,[['Retirada',s.dataRetirada]],
+    s.status==='Recusado'?mkBtns([{label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','Recusado',s.dataRetirada,'');}}]):null); });
 }
 function aprovarEq(s) {
   if(!confirm('Aprovar empréstimo de '+s.nome+'?')) return;
@@ -411,26 +427,32 @@ function renderPatrimonio(docs) {
   addRow.appendChild(catInp); addRow.appendChild(catBtn); catsBox.appendChild(addRow); el.appendChild(catsBox);
 
   // Botão adicionar
-  // Box bloqueio geral de equipamentos para turmas
+  // Box bloqueio por turma e categoria
   var bloqBox=document.createElement('div'); bloqBox.className='cfg';
-  bloqBox.innerHTML='<h3>Bloqueio de Equipamentos por Turma</h3><p style="font-size:12px;color:#6b6b6b;margin-bottom:14px">Bloqueia ou libera todos os equipamentos para uma turma específica, sem alterar as configurações individuais.</p>';
-  var bloqRow=document.createElement('div'); bloqRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
-  var bloqSel=document.createElement('select'); bloqSel.id='bloqSemestre';
-  bloqSel.style.cssText='border:1.5px solid var(--borda);border-radius:var(--r);padding:8px 12px;font-size:13px;outline:none;font-family:Inter,sans-serif';
-  ['Todos','1','2','3','4','5','6'].forEach(function(s){
-    var o=document.createElement('option'); o.value=s; o.textContent=s==='Todos'?'Todos os semestres':s+'º Semestre'; bloqSel.appendChild(o);
-  });
-  var bBloq=document.createElement('button'); bBloq.className='btn bverm'; bBloq.textContent='🚫 Bloquear turma';
-  bBloq.onclick=function(){ bloqueioEquipTurma(bloqSel.value, true); };
-  var bLib2=document.createElement('button'); bLib2.className='btn bok'; bLib2.textContent='✅ Liberar turma';
-  bLib2.onclick=function(){ bloqueioEquipTurma(bloqSel.value, false); };
-  bloqRow.appendChild(bloqSel); bloqRow.appendChild(bBloq); bloqRow.appendChild(bLib2);
-  bloqBox.appendChild(bloqRow); el.appendChild(bloqBox);
+  bloqBox.innerHTML='<h3>Bloqueio por Turma e Categoria</h3><p style="font-size:12px;color:#6b6b6b;margin-bottom:12px">Trava ou libera acesso a uma categoria para um semestre específico.</p>';
+  var bloqGrid=document.createElement('div'); bloqGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px';
+  var sdiv=document.createElement('div');
+  var slbl=document.createElement('label'); slbl.style.cssText='display:block;font-size:11px;font-weight:600;color:var(--roxo2);margin-bottom:4px'; slbl.textContent='Semestre';
+  var bSel=document.createElement('select'); bSel.style.cssText='width:100%;border:1.5px solid var(--borda);border-radius:var(--r);padding:8px;font-size:13px;outline:none;font-family:Inter,sans-serif';
+  ['Todos','1','2','3','4','5','6','7','8'].forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s==='Todos'?'Todos os semestres':s+'º Semestre';bSel.appendChild(o);});
+  sdiv.appendChild(slbl); sdiv.appendChild(bSel);
+  var cdiv=document.createElement('div');
+  var clbl=document.createElement('label'); clbl.style.cssText='display:block;font-size:11px;font-weight:600;color:var(--roxo2);margin-bottom:4px'; clbl.textContent='Categoria';
+  var cSel=document.createElement('select'); cSel.style.cssText='width:100%;border:1.5px solid var(--borda);border-radius:var(--r);padding:8px;font-size:13px;outline:none;font-family:Inter,sans-serif';
+  var oTodas=document.createElement('option'); oTodas.value='Todas'; oTodas.textContent='Todas as categorias'; cSel.appendChild(oTodas);
+  CATS.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});
+  cdiv.appendChild(clbl); cdiv.appendChild(cSel);
+  bloqGrid.appendChild(sdiv); bloqGrid.appendChild(cdiv);
+  var bRow=document.createElement('div'); bRow.style.cssText='display:flex;gap:8px';
+  var bBl=document.createElement('button'); bBl.className='btn bverm'; bBl.textContent='🚫 Bloquear'; bBl.onclick=function(){bloqueioEquipTurma(bSel.value,cSel.value,true);};
+  var bLb=document.createElement('button'); bLb.className='btn bok'; bLb.textContent='✅ Liberar'; bLb.onclick=function(){bloqueioEquipTurma(bSel.value,cSel.value,false);};
+  bRow.appendChild(bBl); bRow.appendChild(bLb);
+  bloqBox.appendChild(bloqGrid); bloqBox.appendChild(bRow); el.appendChild(bloqBox);
 
   var ab=document.createElement('button'); ab.className='abtn'; ab.textContent='+ Adicionar equipamento'; ab.onclick=function(){abrirModal(null);};
   el.appendChild(ab);
 
-  // eCards
+  // Categorias lado a lado em grid
   var cats={};
   docs.forEach(function(p){
     if(!cats[p.categoria]) cats[p.categoria]={};
@@ -438,26 +460,30 @@ function renderPatrimonio(docs) {
     if(!cats[p.categoria][key]) cats[p.categoria][key]=[];
     cats[p.categoria][key].push(p);
   });
+  var catGrid=document.createElement('div'); catGrid.className='cat-grid';
   Object.keys(cats).sort().forEach(function(cat){
     var totalCat=Object.values(cats[cat]).reduce(function(a,arr){return a+arr.length;},0);
-    var t=document.createElement('p'); t.className='st'; t.textContent=cat+' ('+totalCat+')'; el.appendChild(t);
-    var g=document.createElement('div'); g.className='pgrid';
+    var section=document.createElement('div'); section.className='cat-section';
+    var title=document.createElement('div'); title.className='cat-section-title';
+    title.textContent=cat+' ('+totalCat+')'; section.appendChild(title);
+    var cardsDiv=document.createElement('div'); cardsDiv.className='cat-cards';
     Object.keys(cats[cat]).sort().forEach(function(key){
       var unidades=cats[cat][key], modelo=unidades[0];
       var restrito=unidades.some(function(u){return u.restrito4sem;});
       var disponiveis=unidades.filter(function(u){return u.status==='Disponivel';}).length;
       var icone=ICONES[cat]||ICONES[modelo.descricao]||'📦';
       var c=document.createElement('div'); c.className='ecard';
-      c.innerHTML=(restrito?'<span class="ecard-restrito" title="Restrito por RGM">🔒</span>':'')+
+      c.innerHTML=(restrito?'<span class="ecard-restrito">🔒</span>':'')+
         '<span class="ecard-badge">'+disponiveis+'/'+unidades.length+'</span>'+
         '<span class="ecard-icon">'+icone+'</span>'+
         '<div class="ecard-nome">'+modelo.descricao+'</div>'+
         '<div class="ecard-info">'+(modelo.marca||'')+'</div>';
-      c.onclick=(function(cat,modelo,unidades,restrito,icone){ return function(){ abrirEmodal(cat,modelo,unidades,restrito,icone); }; })(cat,modelo,unidades,restrito,icone);
-      g.appendChild(c);
+      c.onclick=(function(cat,modelo,unidades,restrito,icone){return function(){abrirEmodal(cat,modelo,unidades,restrito,icone);};})(cat,modelo,unidades,restrito,icone);
+      cardsDiv.appendChild(c);
     });
-    el.appendChild(g);
+    section.appendChild(cardsDiv); catGrid.appendChild(section);
   });
+  el.appendChild(catGrid);
 }
 
 function abrirEmodal(cat, modelo, unidades, restrito, icone) {
@@ -530,24 +556,6 @@ function abrirModal(item) {
   document.getElementById('modal').classList.add('on');
 }
 
-function bloqueioEquipTurma(sem, bloquear) {
-  var msg = (bloquear?'Bloquear':'Liberar')+' equipamentos para '+(sem==='Todos'?'todos os semestres':'o '+sem+'º semestre')+'?';
-  if (!confirm(msg)) return;
-  // Bloquear/liberar os alunos do semestre para equipamentos
-  db.collection('alunos').get().then(function(snap) {
-    var batch=db.batch();
-    var count=0;
-    snap.forEach(function(d){
-      var aluno=d.data();
-      if (sem==='Todos' || String(aluno.semestre)===String(sem)) {
-        batch.update(d.ref, {equipBloqueado: bloquear});
-        count++;
-      }
-    });
-    batch.commit().then(function(){ alert(count+' alunos '+(bloquear?'bloqueados':'liberados')+' para equipamentos.'); });
-  });
-}
-
 function fecharModal() { document.getElementById('modal').classList.remove('on'); }
 
 function salvarEquip() {
@@ -569,7 +577,8 @@ function renderAlunos(docs) {
   var upRow=document.createElement('div'); upRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';
   var fileIn=document.createElement('input'); fileIn.type='file'; fileIn.accept='.xlsx'; fileIn.style.cssText='flex:1;border:1.5px solid var(--borda);border-radius:var(--r);padding:8px;font-size:13px';
   var upBtn=document.createElement('button'); upBtn.className='btn broxo'; upBtn.textContent='Importar planilha'; upBtn.onclick=function(){importarAlunos(fileIn);};
-  upRow.appendChild(fileIn); upRow.appendChild(upBtn); header.appendChild(upRow);
+  var novoBtn=document.createElement('button'); novoBtn.className='btn bok'; novoBtn.textContent='+ Novo aluno'; novoBtn.onclick=function(){abrirModalAluno(null);};
+  upRow.appendChild(fileIn); upRow.appendChild(upBtn); upRow.appendChild(novoBtn); header.appendChild(upRow);
   var massRow=document.createElement('div'); massRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';
   var bLib=document.createElement('button'); bLib.className='btn bok'; bLib.textContent='✅ Liberar todos'; bLib.onclick=function(){toggleTodos(docs,false);};
   var bBlkS=document.createElement('button'); bBlkS.className='btn bverm'; bBlkS.textContent='🚫 Bloquear semestre...'; bBlkS.onclick=function(){var s=prompt('Qual semestre bloquear?'); if(s) toggleSemestre(docs,s.trim(),true);};
@@ -596,31 +605,15 @@ function renderListaAlunos(docs, container, filtro) {
     var grid=document.createElement('div'); grid.className='agrid';
     sems[sem].forEach(function(d){
       var c=document.createElement('div'); c.className='acard'+(d.bloqueado?' bloqueado':'');
-      // Nome editável
-      var nomeEl=document.createElement('input');
-      nomeEl.value=d.nome||'';
-      nomeEl.style.cssText='width:100%;border:none;border-bottom:1px solid var(--borda);font-size:13px;font-weight:600;padding:2px 0;margin-bottom:6px;outline:none;font-family:Inter,sans-serif;background:transparent';
-      nomeEl.onblur=function(){ if(this.value!==d.nome){ db.collection('alunos').doc(d.id).update({nome:this.value}); d.nome=this.value; } };
-
-      // RGM editável
-      var rgmRow=document.createElement('div'); rgmRow.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:2px';
-      var rgmLbl=document.createElement('span'); rgmLbl.style.cssText='font-size:12px;color:#6b6b6b'; rgmLbl.textContent='RGM: ';
-      var rgmEl=document.createElement('input'); rgmEl.value=d.rgm||'';
-      rgmEl.style.cssText='border:none;border-bottom:1px solid var(--borda);font-size:12px;font-weight:600;padding:1px 0;outline:none;font-family:Inter,sans-serif;background:transparent;width:80px';
-      rgmEl.onblur=function(){ if(this.value!==d.rgm){ db.collection('alunos').doc(d.id).update({rgm:this.value}); d.rgm=this.value; } };
-      rgmRow.appendChild(rgmLbl); rgmRow.appendChild(rgmEl);
-
-      var emailP=document.createElement('p'); emailP.style.cssText='font-size:11px;color:#6b6b6b;margin-bottom:2px';
-      emailP.textContent=(d.rgm||'')+'@alunos.unigrancapital.com.br';
-
-      c.appendChild(nomeEl); c.appendChild(rgmRow); c.appendChild(emailP);
+      c.innerHTML='<h3>'+(d.nome||'')+'</h3><p>RGM: <strong>'+(d.rgm||'')+'</strong></p><p>E-mail: '+(d.rgm||'')+'@alunos.unigrancapital.com.br</p>';
       var badge=document.createElement('span'); badge.className=d.bloqueado?'semp':'sdisp';
       badge.textContent=d.bloqueado?'🚫 Bloqueado':'✅ Ativo'; badge.style.marginTop='8px'; badge.style.display='inline-block';
       c.appendChild(badge);
       var abtns=document.createElement('div'); abtns.className='abtns';
       if(d.bloqueado){var bL=document.createElement('button');bL.className='btn bok';bL.style.cssText='font-size:12px;padding:5px 12px';bL.textContent='Liberar';bL.onclick=(function(d){return function(){db.collection('alunos').doc(d.id).update({bloqueado:false});};})(d);abtns.appendChild(bL);}
       else{var bB=document.createElement('button');bB.className='btn bverm';bB.style.cssText='font-size:12px;padding:5px 12px';bB.textContent='Bloquear';bB.onclick=(function(d){return function(){db.collection('alunos').doc(d.id).update({bloqueado:true});};})(d);abtns.appendChild(bB);}
-      var bDel=document.createElement('button');bDel.className='btn bno';bDel.style.cssText='font-size:12px;padding:5px 12px';bDel.textContent='Remover';
+      var bEd=document.createElement('button');bEd.className='btn bno';bEd.style.cssText='font-size:12px;padding:5px 12px';bEd.textContent='✏️ Editar';bEd.onclick=(function(d){return function(){abrirModalAluno(d);};})(d);abtns.appendChild(bEd);
+      var bDel=document.createElement('button');bDel.className='btn bverm';bDel.style.cssText='font-size:12px;padding:5px 12px';bDel.textContent='Remover';
       bDel.onclick=(function(d){return function(){if(confirm('Remover '+d.nome+'?')) db.collection('alunos').doc(d.id).delete();};})(d);
       abtns.appendChild(bDel); c.appendChild(abtns); grid.appendChild(c);
     });
@@ -791,6 +784,71 @@ function popularInventario() {
   itens.forEach(function(item){batch.set(db.collection('patrimonio').doc(),item);});
   batch.commit().then(function(){alert(itens.length+' equipamentos cadastrados!');});
 }
+function abrirModalAluno(aluno) {
+  document.getElementById('mAlunoTitulo').textContent = aluno ? 'Editar Aluno' : 'Novo Aluno';
+  document.getElementById('mAlunoId').value   = aluno ? aluno.id : '';
+  document.getElementById('mAlunoNome').value = aluno ? (aluno.nome||'') : '';
+  document.getElementById('mAlunoRgm').value  = aluno ? (aluno.rgm||'') : '';
+  document.getElementById('mAlunoSem').value  = aluno ? (aluno.semestre||'') : '';
+  document.getElementById('modalAluno').classList.add('on');
+}
+function salvarAluno() {
+  var id=document.getElementById('mAlunoId').value;
+  var data={nome:document.getElementById('mAlunoNome').value.trim(),rgm:document.getElementById('mAlunoRgm').value.trim(),semestre:document.getElementById('mAlunoSem').value,bloqueado:false};
+  if(!data.nome||!data.rgm){alert('Preencha nome e RGM.');return;}
+  if(id) db.collection('alunos').doc(id).update(data);
+  else   db.collection('alunos').add(data);
+  document.getElementById('modalAluno').classList.remove('on');
+}
+function bloqueioEquipTurma(sem, cat, bloquear) {
+  var semTxt=sem==='Todos'?'todos os semestres':'o '+sem+'º semestre';
+  var catTxt=!cat||cat==='Todas'?'todos os equipamentos':'"'+cat+'"';
+  if(!confirm((bloquear?'Bloquear':'Liberar')+' '+catTxt+' para '+semTxt+'?')) return;
+  var key='bloq_'+(sem==='Todos'?'todos':sem)+'_'+(!cat||cat==='Todas'?'todas':cat.replace(/[^a-z0-9]/gi,'_'));
+  db.collection('config').doc(key).set({semestre:sem,categoria:cat||'Todas',bloqueado:bloquear,atualizadoEm:new Date().toISOString()})
+    .then(function(){alert((bloquear?'Bloqueado':'Liberado')+': '+catTxt+' para '+semTxt+'.');});
+}
+
+function abrirWA(nome, whatsapp, tipo, status, data, horario) {
+  var tel = (whatsapp||'').replace(/\D/g,'');
+  if (tel.length < 10) { alert('WhatsApp não cadastrado ou inválido.'); return; }
+  if (tel.slice(0,2) !== '55') tel = '55' + tel;
+  var msg = '';
+  if (status === 'Aprovado') {
+    if (tipo === 'estudio') {
+      msg = 'Olá, ' + nome + '! 😊\n\n' +
+        'Sua reserva no *Estúdio de PP da UNIGRAN Capital* foi *aprovada*! ✅\n\n' +
+        '📅 Data: *' + (data||'') + '*\n' +
+        '🕐 Horário: *' + (horario||'') + '*\n\n' +
+        'Você receberá o Termo de Uso por e-mail. ' +
+        'Lembre-se de comparecer à coordenação para retirar os equipamentos e assinar o documento.\n\n' +
+        '_Publicidade & Propaganda — UNIGRAN Capital_';
+    } else {
+      msg = 'Olá, ' + nome + '! 😊\n\n' +
+        'Sua solicitação de *empréstimo de equipamentos* foi *aprovada*! ✅\n\n' +
+        '📅 Retirada: *' + (data||'') + '*\n\n' +
+        'Você receberá o Termo de Responsabilidade por e-mail. ' +
+        'Compareça à coordenação para retirar os equipamentos e assinar o documento.\n\n' +
+        '_Publicidade & Propaganda — UNIGRAN Capital_';
+    }
+  } else {
+    if (tipo === 'estudio') {
+      msg = 'Olá, ' + nome + '.\n\n' +
+        'Infelizmente sua solicitação de reserva do *Estúdio PP* para o dia *' + (data||'') + '* às *' + (horario||'') + '* não pôde ser aprovada no momento.\n\n' +
+        'Entre em contato com a Coordenação para mais informações.\n\n' +
+        '_Publicidade & Propaganda — UNIGRAN Capital_';
+    } else {
+      msg = 'Olá, ' + nome + '.\n\n' +
+        'Infelizmente sua solicitação de *empréstimo de equipamentos* não pôde ser aprovada no momento.\n\n' +
+        'Entre em contato com a Coordenação para mais informações.\n\n' +
+        '_Publicidade & Propaganda — UNIGRAN Capital_';
+    }
+  }
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
 </script>
+
+<div class="modal" id="modalAluno"><div class="mbox"><h2 id="mAlunoTitulo">Aluno</h2><input type="hidden" id="mAlunoId"><div class="campo"><label>Nome completo</label><input type="text" id="mAlunoNome" placeholder="Nome completo"></div><div class="campo"><label>RGM</label><input type="text" id="mAlunoRgm" placeholder="Ex: 192.000"></div><div class="campo"><label>Semestre</label><select id="mAlunoSem"><option value="">Selecione</option><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option><option value="4">4º</option><option value="5">5º</option><option value="6">6º</option><option value="7">7º</option><option value="8">8º</option></select></div><div class="btns"><button class="btn broxo" onclick="salvarAluno()">Salvar</button><button class="btn bno" onclick="document.getElementById('modalAluno').classList.remove('on')">Cancelar</button></div></div></div>
 </body>
 </html>
