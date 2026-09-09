@@ -306,6 +306,17 @@ var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0ib88rEgwl9Th_O5VHs_
 var diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 var diaSelecionadoEstudio = null, horarioSelecionado = null;
 var inventario = [];
+var estudiosBloquedos = {}; // {tipoEstudio: true/false}
+
+// Monitorar bloqueios de estúdio em tempo real
+firebase.firestore().collection('config').onSnapshot(function(snap) {
+  snap.forEach(function(d) {
+    if (d.id.startsWith('bloqEstudio_')) {
+      var data = d.data();
+      if (data.estudio) estudiosBloquedos[data.estudio] = !!data.bloqueado;
+    }
+  });
+}, function(err) { console.error('Erro bloqueios:', err); });
 var rgmsAutorizados4sem = [];
 var alunoLogado = null; // {rgm, nome, semestre, bloqueado}
 
@@ -403,25 +414,12 @@ function selecionarEstudio(tipo, el) {
     gerarDias('diasGridEstudio', selecionarDiaEstudio);
   }
 
-  // Verificar se este estúdio está bloqueado individualmente
-  var fbSt;
-  try { fbSt = firebase.app('pp-sol'); } catch(e) {
-    fbSt = firebase.initializeApp({
-  apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
-  authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
-  projectId: "ppuncapital-solicitacoes"
-}, 'pp-sol');
+  // Verificar cache de bloqueios
+  if (estudiosBloquedos[tipo] === true) {
+    alert('O ' + tipo + ' está temporariamente indisponível para agendamento. Procure a Coordenação de PP.');
+    return;
   }
-  var key = 'bloqEstudio_' + tipo.replace(/[^a-z0-9]/gi, '_');
-  firebase.firestore(fbSt).collection('config').doc(key).get()
-    .then(function(d) {
-      if (d.exists && d.data().bloqueado) {
-        alert('O ' + tipo + ' está temporariamente indisponível. Procure a Coordenação.');
-        return;
-      }
-      _abrir();
-    })
-    .catch(function() { _abrir(); }); // em caso de erro, abre normalmente
+  _abrir();
 }
 
 function gerarDias(gridId, onClickFn) {
