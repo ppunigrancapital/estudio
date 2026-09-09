@@ -970,7 +970,7 @@ document.getElementById('formEquip').addEventListener('submit', function(ev) {
   }).join(', ');
   var patList = equipSelecionados.map(function(e){ return e.patrimonio || ''; }).filter(Boolean).join(', ');
 
-  var devInfo = document.getElementById('infoDevolucao') ? document.getElementById('infoDevolucao').textContent : '';
+  var devInfo = document.getElementById('devolucaoInfo') ? document.getElementById('devolucaoInfo').textContent.replace('📅 Data de devolução: ','').trim() : '';
 
   var dados = {
     status: 'Pendente',
