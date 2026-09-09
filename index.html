@@ -131,8 +131,8 @@ textarea{resize:vertical;min-height:80px}
     <div class="campo"><label>Nome completo <span class="obrig">*</span></label><input type="text" name="nome" id="nomeEst" placeholder="Carregando..." readonly required></div>
     <div class="campo"><label>Semestre <span class="obrig">*</span></label>
       <select name="semestre" id="semestreEst" required><option value="">Selecione</option><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option><option value="4">4º</option><option value="5">5º</option><option value="6">6º</option></select></div>
-    <div class="campo"><label>WhatsApp <span class="obrig">*</span></label><input type="tel" name="whatsapp" required></div>
-    <div class="campo"><label>Data de Nascimento <span class="obrig">*</span></label><input type="date" name="nascimento" required></div>
+    <div class="campo"><label>WhatsApp <span class="obrig">*</span></label><input type="tel" name="whatsapp" id="whatsappEst" required></div>
+    <div class="campo"><label>Data de Nascimento <span class="obrig">*</span></label><input type="date" name="nascimento" id="nascimentoEst" required></div>
     <div class="campo">
       <label>E-mail institucional <span class="obrig">*</span></label>
       <p class="campo-hint">Seu e-mail é <strong>RGM@alunos.unigrancapital.com.br</strong> — use o ponto entre os números. Ex: 192.000@alunos.unigrancapital.com.br</p>
@@ -207,8 +207,8 @@ textarea{resize:vertical;min-height:80px}
     <div class="campo"><label>Nome completo <span class="obrig">*</span></label><input type="text" name="nomeE" id="nomeE" placeholder="Carregando..." readonly required></div>
     <div class="campo"><label>Semestre <span class="obrig">*</span></label>
       <select name="semestreE" id="semestreE" required><option value="">Selecione</option><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option><option value="4">4º</option><option value="5">5º</option><option value="6">6º</option></select></div>
-    <div class="campo"><label>WhatsApp <span class="obrig">*</span></label><input type="tel" name="whatsappE" required></div>
-    <div class="campo"><label>Data de Nascimento <span class="obrig">*</span></label><input type="date" name="nascimentoE" required></div>
+    <div class="campo"><label>WhatsApp <span class="obrig">*</span></label><input type="tel" name="whatsappE" id="whatsappE" required></div>
+    <div class="campo"><label>Data de Nascimento <span class="obrig">*</span></label><input type="date" name="nascimentoE" id="nascimentoE" required></div>
     <div class="campo">
       <label>E-mail institucional <span class="obrig">*</span></label>
       <p class="campo-hint">Seu e-mail é <strong>RGM@alunos.unigrancapital.com.br</strong> — use o ponto entre os números. Ex: 192.000@alunos.unigrancapital.com.br</p>
@@ -331,7 +331,9 @@ var _callbacksAlunos = [];
       _cacheAlunos = {};
       snap.forEach(function(d) {
         var data = d.data();
-        if (data.rgm) _cacheAlunos[data.rgm] = data;
+        if (data.rgm) {
+          _cacheAlunos[data.rgm] = Object.assign({}, data, {_docId: d.id});
+        }
       });
       _loadingAlunos = false;
       _callbacksAlunos.forEach(function(cb) { cb(); });
@@ -526,8 +528,29 @@ document.getElementById('formEstudio').addEventListener('submit', function(ev){
   firebase.firestore(fbApp3).collection('solicitacoes').add(dados)
     .then(function(docRef) {
       dados.firestoreId = docRef.id;
-      // Também notificar o Apps Script (para e-mail)
-      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'estudio'}, dados))})
+      // Salvar whatsapp e nascimento no documento do aluno
+      if (alunoLogado && alunoLogado._docId) {
+        var fbUpdEst;
+        try { fbUpdEst = firebase.app('pp-alunos'); } catch(e2) {
+          fbUpdEst = firebase.initializeApp({
+  apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
+  authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
+  projectId: "ppuncapital-solicitacoes"
+}, 'pp-alunos');
+        }
+        var updEst = {};
+        if (dados.whatsapp) updEst.whatsapp = dados.whatsapp;
+        if (dados.nascimento) updEst.nascimento = dados.nascimento;
+        if (Object.keys(updEst).length > 0)
+          firebase.firestore(fbUpdEst).collection('alunos').doc(alunoLogado._docId).update(updEst).catch(function(){});
+      }
+      // Enviar via GET para evitar CORS
+      var params = '?acao=novaEstudio';
+      ['nome','rgm','semestre','whatsapp','email','finalidade','descricao',
+       'equipamentos','patrimonios','participantes','data','horario','tipoEstudio'].forEach(function(k){
+        params += '&' + k + '=' + encodeURIComponent(dados[k]||'');
+      });
+      fetch(SCRIPT_URL + params)
         .then(function(r){ return r.json(); })
         .then(function(res){ console.log('GS resp:', res); })
         .catch(function(err){ console.error('GS erro:', err); });
@@ -870,6 +893,11 @@ function verificarRgm(rgm, tipo) {
     var emailAuto = rgm + '@alunos.unigrancapital.com.br';
     if (emailEl) { emailEl.value = emailAuto; emailEl.readOnly = true; }
     if (statusEl) { statusEl.style.color = '#2d7a2d'; statusEl.textContent = '✅ Aluno identificado: ' + aluno.nome; }
+    // Preencher whatsapp e nascimento se já salvos
+    var whatsEl = document.getElementById(tipo === 'equip' ? 'whatsappE' : 'whatsappEst');
+    var nascEl  = document.getElementById(tipo === 'equip' ? 'nascimentoE' : 'nascimentoEst');
+    if (whatsEl && aluno.whatsapp && !whatsEl.value) whatsEl.value = aluno.whatsapp;
+    if (nascEl  && aluno.nascimento && !nascEl.value) nascEl.value = aluno.nascimento;
     // Atualizar RGMs autorizados para câmera de vídeo
     if (aluno.semestre === '4') {
       rgmsAutorizados4sem = rgmsAutorizados4sem.length ? rgmsAutorizados4sem : [rgm];
@@ -1002,10 +1030,34 @@ document.getElementById('formEquip').addEventListener('submit', function(ev) {
 
   firebase.firestore(fbAppEmp).collection('emprestimos').add(dados)
     .then(function(docRef) {
-      fetch(SCRIPT_URL + '?acao=equipamento', {method:'POST', body:JSON.stringify(Object.assign({tipo:'equipamento'}, dados))})
+      // Salvar whatsapp e nascimento no documento do aluno
+      if (alunoLogado && alunoLogado._docId) {
+        var fbUpd2;
+        try { fbUpd2 = firebase.app('pp-alunos'); } catch(e3) {
+          fbUpd2 = firebase.initializeApp({
+  apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
+  authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
+  projectId: "ppuncapital-solicitacoes"
+}, 'pp-alunos');
+        }
+        var updData2 = {};
+        if (dados.whatsapp) updData2.whatsapp = dados.whatsapp;
+        if (dados.nascimento) updData2.nascimento = dados.nascimento;
+        if (Object.keys(updData2).length > 0) {
+          firebase.firestore(fbUpd2).collection('alunos').doc(alunoLogado._docId).update(updData2)
+            .catch(function(){});
+        }
+      }
+      // Enviar via GET para evitar CORS
+      var paramsEq = '?acao=novoEquip';
+      ['nome','rgm','semestre','whatsapp','email','equipamentos',
+       'patrimonios','dataRetirada','dataDevolucao'].forEach(function(k){
+        paramsEq += '&' + k + '=' + encodeURIComponent(dados[k]||'');
+      });
+      fetch(SCRIPT_URL + paramsEq)
         .then(function(r){ return r.json(); })
-        .then(function(res){ console.log('GS resp:', res); })
-        .catch(function(err){ console.error('GS erro:', err); });
+        .then(function(res){ console.log('GS resp equip:', res); })
+        .catch(function(err){ console.error('GS erro equip:', err); });
       ev.target.style.display = 'none';
       fb.className = 'feedback'; fb.style.display = 'block';
       fb.innerHTML = '<strong>Uhul! 🎉</strong> Solicitação enviada! A Coordenação vai analisar e você receberá um e-mail com a confirmação.';
