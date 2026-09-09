@@ -548,6 +548,8 @@ document.getElementById('formEstudio').addEventListener('submit', function(ev){
   firebase.firestore(fbApp3).collection('solicitacoes').add(dados)
     .then(function(docRef) {
       dados.firestoreId = docRef.id;
+      // Salvar firestoreId no próprio documento
+      docRef.update({firestoreId: docRef.id}).catch(function(){});
       // Salvar whatsapp e nascimento no documento do aluno
       if (alunoLogado && alunoLogado._docId) {
         var fbUpdEst;

@@ -302,7 +302,7 @@ function renderEstudio(docs) {
   var rec=docs.filter(function(s){return s.status==='Recusado';});
   renderSec('estudio','Pendentes',pend,function(s){ return mkCard(
     (s.nome||'')+' — '+(s.semestre||'')+' sem.','RGM '+(s.rgm||'')+' · '+(s.email||'')+' · '+(s.whatsapp||''),s.status,
-    [['Tipo',s.tipoEstudio],['Data',s.data],['Horário',s.horario],['Finalidade',s.finalidade],['Descrição',s.descricao],['Equipamentos',s.equipamentos],['Participantes',s.participantes]],
+    [['Tipo',s.tipoEstudio],['Data',s.data],['Horário',s.horario],['WhatsApp',s.whatsapp],['Finalidade',s.finalidade],['Descrição',s.descricao],['Equipamentos',s.equipamentos],['Participantes',s.participantes]],
     mkBtns([
       {label:'✅ Aprovar',cls:'bok',fn:function(){aprovarEst(s);}},
       {label:'❌ Recusar',cls:'bno',fn:function(){recusarEst(s);}},
@@ -340,14 +340,27 @@ function renderEstudio(docs) {
 function aprovarEst(s) {
   if(!confirm('Aprovar reserva de '+s.nome+'?')) return;
   db.collection('solicitacoes').doc(s.id).update({status:'Aprovado'});
-  fetch(SU+'?acao=aprovar&id='+encodeURIComponent(s.firestoreId||s.id)).catch(function(){});
-  alert('Aprovado!');
+  var u = SU+'?acao=aprovar'
+    +'&id='+encodeURIComponent(s.firestoreId||s.id||'')
+    +'&nome='+encodeURIComponent(s.nome||'')
+    +'&email='+encodeURIComponent(s.email||'')
+    +'&data='+encodeURIComponent(s.data||'')
+    +'&horario='+encodeURIComponent(s.horario||'')
+    +'&tipoEstudio='+encodeURIComponent(s.tipoEstudio||'');
+  fetch(u).then(function(r){return r.json();}).then(function(res){console.log('aprovar:',res);}).catch(function(e){console.error(e);});
+  alert('Aprovado! E-mail enviado ao aluno.');
 }
 function recusarEst(s) {
   if(!confirm('Recusar reserva de '+s.nome+'?')) return;
   db.collection('solicitacoes').doc(s.id).update({status:'Recusado'});
-  fetch(SU+'?acao=recusar&id='+encodeURIComponent(s.firestoreId||s.id)).catch(function(){});
-  alert('Recusado.');
+  var u = SU+'?acao=recusar'
+    +'&id='+encodeURIComponent(s.firestoreId||s.id||'')
+    +'&nome='+encodeURIComponent(s.nome||'')
+    +'&email='+encodeURIComponent(s.email||'')
+    +'&data='+encodeURIComponent(s.data||'')
+    +'&horario='+encodeURIComponent(s.horario||'');
+  fetch(u).then(function(r){return r.json();}).then(function(res){console.log('recusar:',res);}).catch(function(e){console.error(e);});
+  alert('Recusado. E-mail enviado ao aluno.');
 }
 
 // ── EQUIPAMENTOS ─────────────────────────────────────────────────────
@@ -391,14 +404,27 @@ function renderEquipamentos(docs) {
 function aprovarEq(s) {
   if(!confirm('Aprovar empréstimo de '+s.nome+'?')) return;
   db.collection('emprestimos').doc(s.id).update({status:'Aprovado'});
-  fetch(SU+'?acao=aprovarEquip&id='+encodeURIComponent(s.firestoreId||s.id)).catch(function(){});
-  alert('Aprovado! Termo enviado.');
+  var u = SU+'?acao=aprovarEquip'
+    +'&id='+encodeURIComponent(s.firestoreId||s.id||'')
+    +'&nome='+encodeURIComponent(s.nome||'')
+    +'&email='+encodeURIComponent(s.email||'')
+    +'&equipamentos='+encodeURIComponent(s.equipamentos||'')
+    +'&patrimonios='+encodeURIComponent(s.patrimonios||'')
+    +'&dataRetirada='+encodeURIComponent(s.dataRetirada||'')
+    +'&dataDevolucao='+encodeURIComponent(s.dataDevolucao||'');
+  fetch(u).then(function(r){return r.json();}).then(function(res){console.log('aprovarEq:',res);}).catch(function(e){console.error(e);});
+  alert('Aprovado! E-mail enviado ao aluno.');
 }
 function recusarEq(s) {
   if(!confirm('Recusar empréstimo de '+s.nome+'?')) return;
   db.collection('emprestimos').doc(s.id).update({status:'Recusado'});
-  fetch(SU+'?acao=recusarEquip&id='+encodeURIComponent(s.firestoreId||s.id)).catch(function(){});
-  alert('Recusado.');
+  var u = SU+'?acao=recusarEquip'
+    +'&id='+encodeURIComponent(s.firestoreId||s.id||'')
+    +'&nome='+encodeURIComponent(s.nome||'')
+    +'&email='+encodeURIComponent(s.email||'')
+    +'&equipamentos='+encodeURIComponent(s.equipamentos||'');
+  fetch(u).then(function(r){return r.json();}).then(function(res){console.log('recusarEq:',res);}).catch(function(e){console.error(e);});
+  alert('Recusado. E-mail enviado ao aluno.');
 }
 
 // ── PATRIMÔNIO ───────────────────────────────────────────────────────
