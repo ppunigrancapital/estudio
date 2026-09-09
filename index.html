@@ -527,7 +527,10 @@ document.getElementById('formEstudio').addEventListener('submit', function(ev){
     .then(function(docRef) {
       dados.firestoreId = docRef.id;
       // Também notificar o Apps Script (para e-mail)
-      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'estudio'}, dados))}).catch(function(){});
+      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'estudio'}, dados))})
+        .then(function(r){ return r.json(); })
+        .then(function(res){ console.log('GS resp:', res); })
+        .catch(function(err){ console.error('GS erro:', err); });
       document.getElementById('formEstudio').style.display = 'none';
       fb.className = 'feedback'; fb.style.display = 'block';
       fb.innerHTML = '<strong>Uhul! 🎉</strong> Solicitação enviada! A Coordenação vai analisar e você receberá um e-mail com a confirmação.';
@@ -999,7 +1002,10 @@ document.getElementById('formEquip').addEventListener('submit', function(ev) {
 
   firebase.firestore(fbAppEmp).collection('emprestimos').add(dados)
     .then(function(docRef) {
-      fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(Object.assign({tipo:'equipamento'}, dados))}).catch(function(){});
+      fetch(SCRIPT_URL + '?acao=equipamento', {method:'POST', body:JSON.stringify(Object.assign({tipo:'equipamento'}, dados))})
+        .then(function(r){ return r.json(); })
+        .then(function(res){ console.log('GS resp:', res); })
+        .catch(function(err){ console.error('GS erro:', err); });
       ev.target.style.display = 'none';
       fb.className = 'feedback'; fb.style.display = 'block';
       fb.innerHTML = '<strong>Uhul! 🎉</strong> Solicitação enviada! A Coordenação vai analisar e você receberá um e-mail com a confirmação.';
