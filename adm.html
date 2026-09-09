@@ -371,7 +371,7 @@ function renderEquipamentos(docs) {
       {label:'❌ Cancelar',cls:'bverm',fn:function(){cancelarEq(s);}},
       {label:'✏️ Editar',cls:'bno',fn:function(){editarSolicitacao(s,'emprestimos');}},
       {label:'🖨️ Ver Termo',cls:'broxo',href:(function(s){
-        var p = '?acao=termo&id='+(s.firestoreId||s.id);
+        var p = '?acao=termoEquip&id='+(s.firestoreId||s.id);
         p += '&nome='+encodeURIComponent(s.nome||'');
         p += '&rgm='+encodeURIComponent(s.rgm||'');
         p += '&semestre='+encodeURIComponent(s.semestre||'');
