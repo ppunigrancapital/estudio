@@ -388,18 +388,40 @@ var estudioSelecionado = null;
 
 function selecionarEstudio(tipo, el) {
   document.querySelectorAll('.studio-card').forEach(function(c){ c.classList.remove('selecionado'); });
-  el.classList.add('selecionado');
-  estudioSelecionado = tipo;
-  document.getElementById('tipoEstudio').value = tipo;
-  document.getElementById('formEstudioWrap').style.display = 'block';
-  // Resetar datas e horários ao trocar estúdio
-  document.getElementById('diasGridEstudio').innerHTML = '';
-  document.getElementById('slotsContainerEstudio').innerHTML = '<p class="msg-slots">Selecione uma data para ver os horários disponíveis.</p>';
-  diaSelecionadoEstudio = null;
-  horarioSelecionado = null;
-  document.getElementById('campoDataEstudio').value = '';
-  document.getElementById('campoHorarioEstudio').value = '';
-  gerarDias('diasGridEstudio', selecionarDiaEstudio);
+
+  function _abrir() {
+    el.classList.add('selecionado');
+    estudioSelecionado = tipo;
+    document.getElementById('tipoEstudio').value = tipo;
+    document.getElementById('formEstudioWrap').style.display = 'block';
+    document.getElementById('diasGridEstudio').innerHTML = '';
+    document.getElementById('slotsContainerEstudio').innerHTML = '<p class="msg-slots">Selecione uma data para ver os horários disponíveis.</p>';
+    diaSelecionadoEstudio = null;
+    horarioSelecionado = null;
+    document.getElementById('campoDataEstudio').value = '';
+    document.getElementById('campoHorarioEstudio').value = '';
+    gerarDias('diasGridEstudio', selecionarDiaEstudio);
+  }
+
+  // Verificar se este estúdio está bloqueado individualmente
+  var fbSt;
+  try { fbSt = firebase.app('pp-sol'); } catch(e) {
+    fbSt = firebase.initializeApp({
+  apiKey: "AIzaSyD2JmP33idYRN6MBsdRzDM65TTZsYBV050",
+  authDomain: "ppuncapital-solicitacoes.firebaseapp.com",
+  projectId: "ppuncapital-solicitacoes"
+}, 'pp-sol');
+  }
+  var key = 'bloqEstudio_' + tipo.replace(/[^a-z0-9]/gi, '_');
+  firebase.firestore(fbSt).collection('config').doc(key).get()
+    .then(function(d) {
+      if (d.exists && d.data().bloqueado) {
+        alert('O ' + tipo + ' está temporariamente indisponível. Procure a Coordenação.');
+        return;
+      }
+      _abrir();
+    })
+    .catch(function() { _abrir(); }); // em caso de erro, abre normalmente
 }
 
 function gerarDias(gridId, onClickFn) {

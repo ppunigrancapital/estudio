@@ -871,9 +871,34 @@ function bloqueioEquipTurma(sem, cat, bloquear) {
 function bloqueioEstudio(estudio, bloquear) {
   var msg = (bloquear?'Bloquear':'Liberar')+' "'+estudio+'" para novos agendamentos?';
   if(!confirm(msg)) return;
+  // Salvar tanto na chave específica quanto no status geral
   var key = 'bloqEstudio_'+estudio.replace(/[^a-z0-9]/gi,'_');
-  db.collection('config').doc(key).set({estudio:estudio,bloqueado:bloquear,atualizadoEm:new Date().toISOString()})
-    .then(function(){ alert((bloquear?'Bloqueado':'Liberado')+': '+estudio); });
+  var batch = db.batch();
+  batch.set(db.collection('config').doc(key), {
+    estudio: estudio, bloqueado: bloquear, atualizadoEm: new Date().toISOString()
+  });
+  // Se bloquear todos os 3 estúdios, atualizar estudioAtivo também
+  batch.commit().then(function(){
+    // Ler todos os bloqueios para calcular se algum estúdio ainda está livre
+    db.collection('config').get().then(function(snap) {
+      var bloqueados = [];
+      snap.forEach(function(d) {
+        if (d.id.startsWith('bloqEstudio_') && d.data().bloqueado) bloqueados.push(d.data().estudio);
+      });
+      // Atualizar status geral
+      db.collection('config').doc('status').get().then(function(s) {
+        var statusAtual = s.exists ? s.data() : {};
+        statusAtual.bloqEstudiosIndividuais = bloqueados;
+        // estudioAtivo = false só se TODOS estiverem bloqueados
+        var todosBlq = ['Estúdio de Foto','Estúdio de Vídeo','Estúdio de Podcast']
+          .every(function(e){ return bloqueados.indexOf(e) >= 0; });
+        if (todosBlq) statusAtual.estudioAtivo = false;
+        else statusAtual.estudioAtivo = true;
+        db.collection('config').doc('status').set(statusAtual);
+      });
+    });
+    alert((bloquear?'✅ Bloqueado':'✅ Liberado')+': '+estudio);
+  });
 }
 
 function cancelarEst(s) {
