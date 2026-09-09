@@ -306,14 +306,31 @@ function renderEstudio(docs) {
     mkBtns([
       {label:'✅ Aprovar',cls:'bok',fn:function(){aprovarEst(s);}},
       {label:'❌ Recusar',cls:'bno',fn:function(){recusarEst(s);}},
-      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','pendente',s.data,s.horario);}}
+      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','Aprovado',s.data,s.horario);}}
     ]));
   });
   renderSec('estudio','Agendados',apr,function(s){ return mkCard(
     (s.nome||'')+' — '+(s.semestre||'')+' sem.','RGM '+(s.rgm||''),s.status,
     [['Tipo',s.tipoEstudio],['Data',s.data],['Horário',s.horario]],
     mkBtns([
-      {label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termoEstudio&id='+(s.firestoreId||s.id)},
+      {label:'❌ Cancelar',cls:'bverm',fn:function(){cancelarEst(s);}},
+      {label:'✏️ Editar',cls:'bno',fn:function(){editarSolicitacao(s,'solicitacoes');}},
+      {label:'🖨️ Ver Termo',cls:'broxo',href:(function(s){
+        var p = '?acao=termoEstudio&id='+(s.firestoreId||s.id);
+        p += '&nome='+encodeURIComponent(s.nome||'');
+        p += '&rgm='+encodeURIComponent(s.rgm||'');
+        p += '&semestre='+encodeURIComponent(s.semestre||'');
+        p += '&whatsapp='+encodeURIComponent(s.whatsapp||'');
+        p += '&email='+encodeURIComponent(s.email||'');
+        p += '&finalidade='+encodeURIComponent(s.finalidade||'');
+        p += '&descricao='+encodeURIComponent(s.descricao||'');
+        p += '&equipamentos='+encodeURIComponent(s.equipamentos||'Nenhum');
+        p += '&participantes='+encodeURIComponent(s.participantes||'');
+        p += '&data='+encodeURIComponent(s.data||'');
+        p += '&horario='+encodeURIComponent(s.horario||'');
+        p += '&tipoEstudio='+encodeURIComponent(s.tipoEstudio||'Estúdio de Foto');
+        return SU+p;
+      })(s)},
       {label:'📱 WhatsApp',cls:'bok',fn:function(){abrirWA(s.nome,s.whatsapp,'estudio','Aprovado',s.data,s.horario);}}
     ]));
   });
@@ -345,13 +362,26 @@ function renderEquipamentos(docs) {
     mkBtns([
       {label:'✅ Aprovar e enviar termo',cls:'bok',fn:function(){aprovarEq(s);}},
       {label:'❌ Recusar',cls:'bno',fn:function(){recusarEq(s);}},
-      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','pendente',s.dataRetirada,'');}}
+      {label:'📱 WhatsApp',cls:'bno',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','Aprovado',s.dataRetirada,'');}}
     ]));
   });
   renderSec('equipamentos','Aprovados',apr,function(s){ return mkCard(
     s.nome||'','RGM '+(s.rgm||''),s.status,[['Retirada',s.dataRetirada],['Devolução',s.dataDevolucao],['Equipamentos',s.equipamentos]],
     mkBtns([
-      {label:'🖨️ Ver Termo',cls:'broxo',href:SU+'?acao=termo&id='+(s.firestoreId||s.id)},
+      {label:'❌ Cancelar',cls:'bverm',fn:function(){cancelarEq(s);}},
+      {label:'✏️ Editar',cls:'bno',fn:function(){editarSolicitacao(s,'emprestimos');}},
+      {label:'🖨️ Ver Termo',cls:'broxo',href:(function(s){
+        var p = '?acao=termo&id='+(s.firestoreId||s.id);
+        p += '&nome='+encodeURIComponent(s.nome||'');
+        p += '&rgm='+encodeURIComponent(s.rgm||'');
+        p += '&semestre='+encodeURIComponent(s.semestre||'');
+        p += '&email='+encodeURIComponent(s.email||'');
+        p += '&equipamentos='+encodeURIComponent(s.equipamentos||'');
+        p += '&patrimonios='+encodeURIComponent(s.patrimonios||'');
+        p += '&dataRetirada='+encodeURIComponent(s.dataRetirada||'');
+        p += '&dataDevolucao='+encodeURIComponent(s.dataDevolucao||'');
+        return SU+p;
+      })(s)},
       {label:'📱 WhatsApp',cls:'bok',fn:function(){abrirWA(s.nome,s.whatsapp,'equip','Aprovado',s.dataRetirada,'');}}
     ]));
   });
@@ -392,6 +422,22 @@ function renderPatrimonio(docs) {
   var bSv=document.createElement('button'); bSv.className='btn broxo'; bSv.textContent='Salvar disponibilidade'; bSv.onclick=salvarStatus;
   cfg.appendChild(lEst); cfg.appendChild(mEst); cfg.appendChild(lEq); cfg.appendChild(mEq); cfg.appendChild(bSv);
   el.appendChild(cfg);
+
+  // Bloqueio por estúdio individual
+  var stBox=document.createElement('div'); stBox.className='cfg';
+  stBox.innerHTML='<h3>Bloqueio por Estúdio</h3><p style="font-size:12px;color:#6b6b6b;margin-bottom:12px">Bloqueia ou libera um estúdio específico para novos agendamentos.</p>';
+  var stGrid=document.createElement('div'); stGrid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
+  ['Estúdio de Foto','Estúdio de Vídeo','Estúdio de Podcast'].forEach(function(est){
+    var card=document.createElement('div'); card.style.cssText='border:1.5px solid var(--borda);border-radius:var(--r);padding:12px;text-align:center;background:#fff';
+    var lbl=document.createElement('div'); lbl.style.cssText='font-size:12px;font-weight:600;color:var(--roxo2);margin-bottom:8px'; lbl.textContent=est;
+    var bBl=document.createElement('button'); bBl.className='btn bverm'; bBl.style.cssText='width:100%;font-size:11px;padding:5px;margin-bottom:4px'; bBl.textContent='🚫 Bloquear';
+    bBl.onclick=(function(e){ return function(){ bloqueioEstudio(e,true); }; })(est);
+    var bLb=document.createElement('button'); bLb.className='btn bok'; bLb.style.cssText='width:100%;font-size:11px;padding:5px'; bLb.textContent='✅ Liberar';
+    bLb.onclick=(function(e){ return function(){ bloqueioEstudio(e,false); }; })(est);
+    card.appendChild(lbl); card.appendChild(bBl); card.appendChild(bLb);
+    stGrid.appendChild(card);
+  });
+  stBox.appendChild(stGrid); el.appendChild(stBox);
 
   // RGMs
   var rgmBox=document.createElement('div'); rgmBox.className='cfg';
@@ -807,6 +853,43 @@ function bloqueioEquipTurma(sem, cat, bloquear) {
   var key='bloq_'+(sem==='Todos'?'todos':sem)+'_'+(!cat||cat==='Todas'?'todas':cat.replace(/[^a-z0-9]/gi,'_'));
   db.collection('config').doc(key).set({semestre:sem,categoria:cat||'Todas',bloqueado:bloquear,atualizadoEm:new Date().toISOString()})
     .then(function(){alert((bloquear?'Bloqueado':'Liberado')+': '+catTxt+' para '+semTxt+'.');});
+}
+
+function bloqueioEstudio(estudio, bloquear) {
+  var msg = (bloquear?'Bloquear':'Liberar')+' "'+estudio+'" para novos agendamentos?';
+  if(!confirm(msg)) return;
+  var key = 'bloqEstudio_'+estudio.replace(/[^a-z0-9]/gi,'_');
+  db.collection('config').doc(key).set({estudio:estudio,bloqueado:bloquear,atualizadoEm:new Date().toISOString()})
+    .then(function(){ alert((bloquear?'Bloqueado':'Liberado')+': '+estudio); });
+}
+
+function cancelarEst(s) {
+  if(!confirm('Cancelar a reserva aprovada de '+s.nome+'? O aluno será notificado.')) return;
+  db.collection('solicitacoes').doc(s.id).update({status:'Cancelado'});
+  var url = SU+'?acao=recusar&id='+encodeURIComponent(s.firestoreId||s.id);
+  url += '&nome='+encodeURIComponent(s.nome||'')+'&email='+encodeURIComponent(s.email||'');
+  url += '&data='+encodeURIComponent(s.data||'')+'&horario='+encodeURIComponent(s.horario||'');
+  url += '&motivo=cancelamento';
+  fetch(url).catch(function(){});
+  alert('Reserva cancelada. E-mail enviado ao aluno.');
+}
+
+function cancelarEq(s) {
+  if(!confirm('Cancelar o empréstimo aprovado de '+s.nome+'? O aluno será notificado.')) return;
+  db.collection('emprestimos').doc(s.id).update({status:'Cancelado'});
+  var url = SU+'?acao=recusarEquip&id='+encodeURIComponent(s.firestoreId||s.id);
+  url += '&nome='+encodeURIComponent(s.nome||'')+'&email='+encodeURIComponent(s.email||'');
+  url += '&equipamentos='+encodeURIComponent(s.equipamentos||'');
+  fetch(url).catch(function(){});
+  alert('Empréstimo cancelado. E-mail enviado ao aluno.');
+}
+
+function editarSolicitacao(s, colecao) {
+  var equipAtual = s.equipamentos || '';
+  var novo = prompt('Editar equipamentos aprovados (aprovação parcial):\nAtual: ' + equipAtual + '\n\nDigite os equipamentos aprovados:', equipAtual);
+  if (novo === null) return;
+  db.collection(colecao).doc(s.id).update({equipamentos: novo.trim()});
+  alert('Equipamentos atualizados. Recarregue a página para ver.');
 }
 
 function abrirWA(nome, whatsapp, tipo, status, data, horario) {
